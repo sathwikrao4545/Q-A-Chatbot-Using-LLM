@@ -1,52 +1,42 @@
 import os
-import streamlit as st
 from dotenv import load_dotenv
+import streamlit as st
 from langchain_openai import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-# Load environment variables from .env file
+# Load environment variables
 load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
-# Fetch the OpenAI API key
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-api_token = os.getenv("HUGGINGFACEHUB_API_TOKEN")
-print("API Token Loaded Successfully:", api_token[:5] + "..." + api_token[-5:])
+# Ensure API key is loaded
+if not openai_api_key:
+    st.error("API key not found. Please set OPENAI_API_KEY in your .env file.")
+    st.stop()
 
-# Ensure the OpenAI API key is loaded correctly
-if not OPENAI_API_KEY:
-    st.error("OPENAI_API_KEY is missing. Please check your .env file or environment variables.")
-    st.stop() 
-    
-  
-     # Stop execution if the API key is not found
+# Initialize OpenAI model
+llm = ChatOpenAI(api_key=openai_api_key, temperature=0.6)
 
-# Initialize the OpenAI model
-llm = ChatOpenAI(openai_api_key=OPENAI_API_KEY, temperature=0.6)
-
-# Streamlit UI Setup
+# Streamlit UI
 st.set_page_config(page_title="Conversational Q&A Chatbot")
 st.header("Hey, Let's Chat!")
 
-# Initialize session state if not already set
-if 'flowmessages' not in st.session_state:
-    st.session_state['flowmessages'] = [SystemMessage(content="You are a helpful AI assistant")]
+# Initialize session state
+if "flowmessages" not in st.session_state:
+    st.session_state["flowmessages"] = [SystemMessage(content="You are a helpful AI assistant.")]
 
-# Function to get a response from the OpenAI model
+# Function to get chatbot response
 def get_chatmodel_response(question):
-    st.session_state['flowmessages'].append(HumanMessage(content=question))
-    answer = llm(st.session_state['flowmessages'])
-    st.session_state['flowmessages'].append(AIMessage(content=answer.content))
+    st.session_state["flowmessages"].append(HumanMessage(content=question))
+    answer = llm.invoke(st.session_state["flowmessages"])
+    st.session_state["flowmessages"].append(AIMessage(content=answer.content))
     return answer.content
 
-# Streamlit input and button
-user_input = st.text_input("Enter your message:", key="input")
+# User input
+user_input = st.text_input("Input: ", key="input")
 submit = st.button("Ask")
 
-# Display the response when the button is clicked
-if submit:
-    if user_input:
-        response = get_chatmodel_response(user_input)
-        st.subheader("Response:")
-        st.write(response)
-    else:
-        st.error("Please enter a message.")
+# Display response
+if submit and user_input:
+    response = get_chatmodel_response(user_input)
+    st.subheader("Response:")
+    st.write(response)
