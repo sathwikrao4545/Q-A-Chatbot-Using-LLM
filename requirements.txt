@@ -1,6 +1,6 @@
 openai
 streamlit
-from langchain_community.chat_models import ChatOpenAI
+langchain_community
 python-dotenv
 huggingface_hub
 
